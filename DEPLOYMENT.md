@@ -27,13 +27,27 @@ sebagai Web App yang dapat diakses siapa saja). Panggilan GAS memakai header
 
 | Variable | Nilai | Scope |
 |---|---|---|
-| `DATABASE_URL` | `mysql://user:pass@host:3306/vanry_cam` (TLS aktif) | Production/Preview |
+| `DATABASE_URL` | `mysql://user:pass@host:port/defaultdb?ssl-mode=REQUIRED` (Aiven) | Production/Preview |
 | `GAS_WEB_APP_URL` | URL Web App Google Apps Script (unggah kolase ke Drive) | Production/Preview |
 | `SESSION_SECRET` | string acak panjang (≥32 byte) | Production/Preview |
 | `NEXT_PUBLIC_APP_URL` | `https://domain-acara` | Production |
 | `ADMIN_EMAIL` / `ADMIN_PASSWORD` | hanya untuk seeding awal | jaga tetap lokal |
 
 Catatan: jangan pernah menaruh secret di `NEXT_PUBLIC_*`.
+
+### Koneksi MySQL Aiven (SSL)
+
+Runtime memakai `@prisma/adapter-mariadb`. Driver `mariadb` **tidak** mengenali parameter `ssl-mode`,
+sehingga `src/lib/database-url.ts` (`buildMariaDbPoolConfig`) menerjemahkan URL Aiven menjadi konfigurasi
+pool:
+
+- `ssl-mode=REQUIRED` / `PREFERRED` → TLS aktif, `rejectUnauthorized: false` (sertifikat Aiven bertipe
+  self-signed CA; tidak ada CA yang dipasang).
+- `ssl-mode=VERIFY_CA` / `VERIFY_IDENTITY` → TLS aktif, `rejectUnauthorized: true`.
+- `ssl-mode=DISABLED` / tanpa parameter → non-TLS (hanya untuk development lokal).
+
+`prisma migrate deploy` (Prisma CLI) menerima `ssl-mode=REQUIRED` apa adanya. Format WAJIB `mysql://`
+(bukan `mariadb://`).
 
 ## 4. Migrasi & Seed
 
