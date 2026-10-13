@@ -168,7 +168,7 @@ export async function composeCollage(
 
   context.fillStyle = POSTER_COLORS.accent;
   context.font = `500 18px ${POSTER_TYPOGRAPHY.meta}`;
-  context.fillText("JAKARTA · 2026", MARGIN, footerTop + 78);
+  context.fillText("Muara Teweh · 2026", MARGIN, footerTop + 78);
 
   drawStamp(context, FRAME_WIDTH - MARGIN - 70, footerTop + 40);
 

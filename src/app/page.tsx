@@ -45,7 +45,7 @@ export default function LandingPage() {
               Disposable Camera
             </Badge>
             <h1 className="font-heading text-4xl leading-tight font-semibold text-balance sm:text-5xl">
-              Tangkap momen malam ini, lihat hasilnya segera.
+              Tangkap momen hari ini, lihat hasilnya segera.
             </h1>
             <p className="max-w-md text-base text-muted-foreground">
               Vanry Cam adalah kamera disposable untuk pernikahan {couple}.

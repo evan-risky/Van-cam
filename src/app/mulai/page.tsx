@@ -25,7 +25,7 @@ const quotaDescriptions: Record<Quota, string> = {
   4: "Singkat dan cukup",
   8: "Paling sering dipilih",
   16: "Untuk yang suka jepret",
-  32: "Roll penuh satu malam",
+  32: "Roll penuh satu hari",
 };
 
 export default function MulaiPage() {

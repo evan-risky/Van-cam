@@ -31,6 +31,20 @@ export function isAllowedCollageMimeType(value: string): boolean {
   return (COLLAGE_MIME_TYPES as readonly string[]).includes(value);
 }
 
+export const GALLERY_DRIVE_FOLDER_ID = "1MABCea1U99q63pVkN1WKb00DuJkGQirR";
+
+export function driveFolderEmbedUrl(
+  folderId: string = GALLERY_DRIVE_FOLDER_ID,
+): string {
+  return `https://drive.google.com/embeddedfolderview?id=${folderId}#grid`;
+}
+
+export function driveFolderUrl(
+  folderId: string = GALLERY_DRIVE_FOLDER_ID,
+): string {
+  return `https://drive.google.com/drive/u/0/folders/${folderId}`;
+}
+
 export function getGasWebAppUrl(
   value: string | undefined = process.env.GAS_WEB_APP_URL,
 ): string | null {

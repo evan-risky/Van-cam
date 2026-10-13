@@ -46,11 +46,21 @@ export default function KolasePage() {
   const [composing, setComposing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [result, setResult] = useState<{
+    url: string;
+    blob: Blob;
+    signature: string;
+  } | null>(null);
   const [version, setVersion] = useState(0);
 
-  const blobRef = useRef<Blob | null>(null);
   const keyRef = useRef<string | null>(null);
+  const resultRef = useRef<{ url: string; blob: Blob; signature: string } | null>(
+    null,
+  );
+
+  const signature = photos
+    .map((photo) => photo.id)
+    .join("|");
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -79,6 +89,10 @@ export default function KolasePage() {
   }, [ready, session, load]);
 
   useEffect(() => {
+    resultRef.current = result;
+  }, [result]);
+
+  useEffect(() => {
     const urls = photos.map((photo) => URL.createObjectURL(photo.blob));
     setPhotoUrls(urls);
     return () => urls.forEach((url) => URL.revokeObjectURL(url));
@@ -86,9 +100,21 @@ export default function KolasePage() {
 
   useEffect(() => {
     return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
+      const current = resultRef.current;
+      if (current) URL.revokeObjectURL(current.url);
     };
-  }, [previewUrl]);
+  }, []);
+
+  useEffect(() => {
+    setResult((current) => {
+      if (current && current.signature !== signature) {
+        URL.revokeObjectURL(current.url);
+        keyRef.current = null;
+        return null;
+      }
+      return current;
+    });
+  }, [signature]);
 
   async function build() {
     if (composing || uploading) return;
@@ -102,15 +128,18 @@ export default function KolasePage() {
     setComposing(true);
     setProgress("Menyusun kolase…");
     try {
+      const composedSignature = photos.map((photo) => photo.id).join("|");
       const blob = await composeCollage({
         blobs: photos.map((photo) => photo.blob),
         couple: event?.couple,
         guest: session?.name,
         dateLabel: event?.dateLabel,
       });
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      blobRef.current = blob;
-      setPreviewUrl(URL.createObjectURL(blob));
+      const url = URL.createObjectURL(blob);
+      setResult((current) => {
+        if (current) URL.revokeObjectURL(current.url);
+        return { url, blob, signature: composedSignature };
+      });
       keyRef.current = newIdempotencyKey();
       setProgress(null);
     } catch (err) {
@@ -125,7 +154,7 @@ export default function KolasePage() {
 
   async function upload() {
     if (uploading || composing) return;
-    if (!blobRef.current) {
+    if (!result) {
       setError("Buat kolase dulu sebelum mengunggah.");
       return;
     }
@@ -137,7 +166,7 @@ export default function KolasePage() {
       const form = new FormData();
       form.append(
         "file",
-        blobRef.current,
+        result.blob,
         `vanry-collage-${session?.id ?? "tamu"}.jpg`,
       );
       form.append("idempotencyKey", keyRef.current);
@@ -152,7 +181,7 @@ export default function KolasePage() {
       setSaved(fresh.collage);
       setVersion((prev) => prev + 1);
       setProgress(null);
-      router.push("/galeri");
+      router.push("/galeri?uploaded=1");
     } catch (err) {
       const message =
         err instanceof ApiError
@@ -189,7 +218,7 @@ export default function KolasePage() {
 
   const grid = collageGrid(photos.length);
   const busy = composing || uploading;
-  const canUpload = Boolean(previewUrl);
+  const hasResult = Boolean(result);
   const savedUploaded = saved?.status === "UPLOADED";
 
   return (
@@ -210,42 +239,47 @@ export default function KolasePage() {
             ) : (
               <LayoutGrid className="size-4" />
             )}
-            Buat Kolase
+            {hasResult ? "Buat Ulang Kolase" : "Buat Kolase"}
           </Button>
-          <div className="flex gap-3">
-            <Button
-              variant="outline"
-              className="flex-1"
-              nativeButton={false}
-              render={
-                <a
-                  href={previewUrl ?? "#"}
-                  download="vanry-cam-kolase.jpg"
-                  aria-disabled={!previewUrl}
-                />
-              }
-            >
-              <Download className="size-4" />
-              Download Kolase
-            </Button>
-            <Button
-              className="flex-1"
-              onClick={() => void upload()}
-              disabled={busy || !canUpload}
-            >
-              {uploading ? (
-                <>
-                  <Loader2 className="size-4 animate-spin" />
-                  Mengunggah…
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="size-4" />
-                  Unggah Kolase
-                </>
-              )}
-            </Button>
-          </div>
+          {hasResult ? (
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                className="flex-1"
+                nativeButton={false}
+                render={
+                  <a
+                    href={result?.url ?? "#"}
+                    download="vanry-cam-kolase.jpg"
+                  />
+                }
+              >
+                <Download className="size-4" />
+                Download Kolase
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={() => void upload()}
+                disabled={busy}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="size-4 animate-spin" />
+                    Mengunggah…
+                  </>
+                ) : (
+                  <>
+                    <UploadCloud className="size-4" />
+                    Unggah Kolase
+                  </>
+                )}
+              </Button>
+            </div>
+          ) : (
+            <p className="text-center text-xs text-muted-foreground">
+              Tombol Download dan Unggah muncul setelah kolase berhasil dibuat.
+            </p>
+          )}
         </div>
       }
     >
@@ -279,13 +313,13 @@ export default function KolasePage() {
             </p>
           ) : null}
 
-          {previewUrl ? (
+          {result ? (
             <Card>
               <CardContent className="flex flex-col gap-3 pt-4">
                 <p className="text-sm font-medium">Hasil kolase</p>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={previewUrl}
+                  src={result.url}
                   alt="Hasil kolase"
                   className="w-full rounded-xl border border-border"
                 />

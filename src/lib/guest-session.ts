@@ -16,6 +16,10 @@ export function buildGuestCookie(token: string): string {
   }`;
 }
 
+export function clearGuestCookie(): string {
+  return `${GUEST_COOKIE}=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0`;
+}
+
 function parseCookieHeader(header: string | null): string | null {
   if (!header) return null;
   const entry = header

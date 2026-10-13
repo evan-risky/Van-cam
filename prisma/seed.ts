@@ -51,8 +51,8 @@ async function main() {
     update: {
       name: "Kamera Disposable Evan & Inri",
       couple: "Evan & Inri",
-      location: "Jakarta",
-      dateLabel: "Sabtu, 12 Desember 2026",
+      location: "Muara Teweh",
+      dateLabel: "Rabu, 18 November 2026",
       year: 2026,
     },
     create: {
@@ -60,8 +60,8 @@ async function main() {
       name: "Kamera Disposable Evan & Inri",
       slug: "evan-inri",
       couple: "Evan & Inri",
-      location: "Jakarta",
-      dateLabel: "Sabtu, 12 Desember 2026",
+      location: "Muara Teweh",
+      dateLabel: "Rabu, 18 November 2026",
       year: 2026,
     },
   });

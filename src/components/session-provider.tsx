@@ -35,6 +35,7 @@ type SessionContextValue = {
     name: string;
     quota: number;
   }) => Promise<{ ok: true } | { ok: false; message: string }>;
+  resetSession: () => Promise<{ ok: true } | { ok: false; message: string }>;
 };
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -134,9 +135,26 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const resetSession = useCallback<
+    SessionContextValue["resetSession"]
+  >(async () => {
+    try {
+      await apiPost<{ ok: true }>("/api/sessions/me/reset", {});
+      if (mounted.current) {
+        setSession(null);
+      }
+      return { ok: true };
+    } catch (error) {
+      if (error instanceof ApiError) {
+        return { ok: false, message: error.message };
+      }
+      return { ok: false, message: "Gagal mengakhiri sesi." };
+    }
+  }, []);
+
   const value = useMemo<SessionContextValue>(
-    () => ({ ready, event, session, refresh, createSession }),
-    [ready, event, session, refresh, createSession],
+    () => ({ ready, event, session, refresh, createSession, resetSession }),
+    [ready, event, session, refresh, createSession, resetSession],
   );
 
   return (

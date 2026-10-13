@@ -115,7 +115,7 @@ export function CollagePoster({
               className="text-[0.6rem] tracking-[0.25em] uppercase"
               style={{ color: POSTER_COLORS.accent }}
             >
-              Jakarta · 2026
+              Muara Teweh · 2026
             </p>
           </div>
 
