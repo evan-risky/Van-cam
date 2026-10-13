@@ -48,3 +48,6 @@ next-env.d.ts
 
 # kolase mode local (jangan commit file upload)
 /uploads
+
+.vercel
+.env*
