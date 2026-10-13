@@ -1,0 +1,170 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum SessionStatus {
+  ACTIVE
+  COMPLETED
+}
+
+enum PhotoStatus {
+  RESERVED
+  UPLOADED
+  FAILED
+}
+
+enum CollageStatus {
+  RESERVED
+  UPLOADED
+  FAILED
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members  OrganizationMember[]
+  events   Event[]
+  auditLogs AuditLog[]
+
+  @@map("organizations")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  memberships OrganizationMember[]
+
+  @@map("users")
+}
+
+model OrganizationMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  role           String   @default("owner")
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+  @@map("organization_members")
+}
+
+model Event {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  slug           String   @unique
+  couple         String
+  location       String
+  dateLabel      String
+  year           Int
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sessions     GuestSession[]
+
+  @@index([organizationId])
+  @@map("events")
+}
+
+model GuestSession {
+  id                 String        @id @default(cuid())
+  eventId            String
+  anonymousTokenHash String
+  name               String
+  quota              Int
+  status             SessionStatus @default(ACTIVE)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  completedAt        DateTime?
+
+  event   Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  photos  Photo[]
+  collage Collage?
+
+  @@unique([eventId, anonymousTokenHash])
+  @@index([eventId])
+  @@map("guest_sessions")
+}
+
+model Photo {
+  id             String      @id @default(cuid())
+  sessionId      String
+  eventId        String
+  index          Int
+  status         PhotoStatus @default(RESERVED)
+  idempotencyKey String
+  fileData       Bytes?      @db.LongBlob
+  mimeType       String?
+  byteSize       Int?
+  width          Int?
+  height         Int?
+  uploadedAt     DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  session GuestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, idempotencyKey])
+  @@index([sessionId])
+  @@index([eventId])
+  @@map("photos")
+}
+
+model Collage {
+  id             String        @id @default(cuid())
+  sessionId      String        @unique
+  eventId        String
+  idempotencyKey String
+  status         CollageStatus @default(RESERVED)
+  mimeType       String?
+  byteSize       Int?
+  width          Int?
+  height         Int?
+  photoCount     Int?
+  driveFileUrl   String?       @db.Text
+  driveFileId    String?
+  driveFileName  String?
+  uploadedAt     DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  session GuestSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([eventId])
+  @@map("collages")
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String?
+  actorType      String
+  actorId        String?
+  action         String
+  targetType     String?
+  targetId       String?
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization? @relation(fields: [organizationId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId])
+  @@map("audit_logs")
+}
