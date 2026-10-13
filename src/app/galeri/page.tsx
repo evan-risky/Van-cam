@@ -2,15 +2,7 @@
 
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  Camera,
-  CircleAlert,
-  ExternalLink,
-  Loader2,
-  RefreshCw,
-  Sparkles,
-} from "lucide-react";
-import Link from "next/link";
+import { Camera, CircleAlert, Loader2, RefreshCw, Sparkles } from "lucide-react";
 import { FlowLayout } from "@/components/guest-shell";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -18,11 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "@/components/session-provider";
 import { clearPhotos } from "@/lib/photo-store";
-import {
-  GALLERY_DRIVE_FOLDER_ID,
-  driveFolderEmbedUrl,
-  driveFolderUrl,
-} from "@/lib/config";
+import { GALLERY_DRIVE_FOLDER_ID, driveFolderEmbedUrl } from "@/lib/config";
 
 function GaleriContent() {
   const router = useRouter();
@@ -121,44 +109,29 @@ function GaleriContent() {
       ) : (
         <Card className="overflow-hidden py-0">
           <CardContent className="p-0">
-            <div className="relative h-[70vh] min-h-[420px] w-full bg-muted">
+            <div className="relative w-full bg-muted">
               {!loaded && !iframeError ? (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="size-5 animate-spin" />
                   Memuat galeri acara…
                 </div>
               ) : null}
 
               {iframeError ? (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-6 text-center">
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 px-6 text-center">
                   <CircleAlert className="size-7 text-destructive" />
-                  <p className="text-sm font-medium">Galeri tidak dapat dimuat</p>
-                  <p className="text-xs text-muted-foreground">
-                    Pastikan folder Google Drive acara sudah dibagikan
-                    (“Siapa saja yang memiliki link” atau akses yang sesuai),
-                    lalu coba muat ulang.
+                  <p className="text-sm font-medium">
+                    Galeri tidak dapat dimuat
                   </p>
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={reloadIframe}>
-                      <RefreshCw className="size-3.5" />
-                      Coba lagi
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      nativeButton={false}
-                      render={
-                        <a
-                          href={driveFolderUrl(GALLERY_DRIVE_FOLDER_ID)}
-                          target="_blank"
-                          rel="noreferrer"
-                        />
-                      }
-                    >
-                      <ExternalLink className="size-3.5" />
-                      Buka di Drive
-                    </Button>
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Pastikan folder Google Drive acara sudah dibagikan (“Siapa
+                    saja yang memiliki link” atau akses yang sesuai), lalu coba
+                    muat ulang.
+                  </p>
+                  <Button size="sm" variant="outline" onClick={reloadIframe}>
+                    <RefreshCw className="size-3.5" />
+                    Coba lagi
+                  </Button>
                 </div>
               ) : null}
 
@@ -167,29 +140,36 @@ function GaleriContent() {
                 src={embedUrl}
                 title="Galeri acara di Google Drive"
                 loading="lazy"
+                scrolling="no"
                 onLoad={() => setLoaded(true)}
                 onError={() =>
                   setIframeError("Gagal memuat galeri Google Drive.")
                 }
-                className="size-full border-0"
+                className="block h-[160vh] min-h-[820px] w-full border-0"
+              />
+
+              {/*
+                Perisai transparan: mencegah klik/tap membuka file di Drive.
+                pointer-events auto menahan klik, sementara gulir tetap bekerja
+                karena halaman ini (bukan iframe) yang menjadi kontainer gulir.
+              */}
+              <div
+                aria-hidden
+                className="absolute inset-0 z-10 cursor-default"
+                onClick={(event) => event.preventDefault()}
+                onDoubleClick={(event) => event.preventDefault()}
+                onContextMenu={(event) => event.preventDefault()}
+                onAuxClick={(event) => event.preventDefault()}
               />
             </div>
           </CardContent>
         </Card>
       )}
 
-      <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>Folder acara {event?.couple ?? "Evan & Inri"}.</span>
-        <Link
-          href={driveFolderUrl(GALLERY_DRIVE_FOLDER_ID)}
-          target="_blank"
-          rel="noreferrer"
-          className="flex items-center gap-1 underline underline-offset-4"
-        >
-          <ExternalLink className="size-3.5" />
-          Buka di Drive
-        </Link>
-      </div>
+      <p className="text-center text-xs text-muted-foreground">
+        Hanya pratinjau — gambar tidak dapat dibuka atau diunduh dari sini.
+        {event?.couple ? ` Folder acara ${event.couple}.` : ""}
+      </p>
     </FlowLayout>
   );
 }
